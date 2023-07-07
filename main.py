@@ -1,39 +1,26 @@
-from flask import Flask, request
-import os
-import psycopg2
-from urllib.parse import urlparse
-import datetime
-
-app = Flask(__name__)
-
-def get_conn():
-    result = urlparse(os.getenv("DATABASE_URL"))
-    database = result.path[1:]
-    hostname = result.hostname
-    conn = psycopg2.connect(
-        database = database,
-        host = hostname
-    )
-    return conn
-
 @app.route('/webhook', methods=['POST'])
 def respond():
-    data = request.json
-    conn = get_conn()
-    cur = conn.cursor()
+    try:
+        data = request.json
+        app.logger.info(f"Received data: {data}")
 
-    date = datetime.datetime.strptime(data['date'], '%m/%d/%Y').date()  # date string should be converted to date object
+        conn = get_conn()
+        cur = conn.cursor()
 
-    cur.execute("""
-        INSERT INTO salesdata (product, units_sold, revenue, cost, profit, date)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (data['product'], data['units_sold'], data['revenue'], data['cost'], data['profit'], date))
+        date = datetime.datetime.strptime(data['date'], '%m/%d/%Y').date()  # date string should be converted to date object
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        cur.execute("""
+            INSERT INTO salesdata (product, units_sold, revenue, cost, profit, date)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (data['product'], data['units_sold'], data['revenue'], data['cost'], data['profit'], date))
 
-    return {'message': 'Data received and stored.'}, 201
+        conn.commit()
+        cur.close()
+        conn.close()
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        app.logger.info("Data inserted into database successfully")
+
+        return {'message': 'Data received and stored.'}, 201
+    except Exception as e:
+        app.logger.error(f"Error processing request: {e}")
+        raise
