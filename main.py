@@ -9,7 +9,7 @@ app = Flask(__name__)
 DATABASE_URL = os.environ['DATABASE_URL']
 
 # Configure the SQLALCHEMY_DATABASE_URI setting
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['DATABASE_URI'] = DATABASE_URL
 
 db = SQLAlchemy(app)
 
