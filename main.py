@@ -6,8 +6,8 @@ import psycopg2
 # Initialize the Flask app
 app = Flask(__name__)
 
-# Ensure the DATABASE_URL environment variable is set
-DATABASE_URL = os.environ.get('postgresql://postgres:ecA5266cG2CB62D6G43abFED6641aGb3@viaduct.proxy.rlwy.net:55714/railway')
+# Get the DATABASE_URL environment variable
+DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
     raise EnvironmentError('The DATABASE_URL environment variable is not set.')
 
@@ -41,4 +41,5 @@ def respond():
         return {'error': str(e)}, 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000))
+    # The PORT environment variable is automatically set by Railway
+    app.run(host='0.0.0.0', port=os.environ.get('PORT'))
