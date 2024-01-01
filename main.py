@@ -1,17 +1,27 @@
+from flask import Flask, request
+import datetime
+import os
+import psycopg2
+
+# Initialize the Flask app
+app = Flask(__name__)
+
+# Ensure the DATABASE_URL environment variable is set
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if not DATABASE_URL:
+    raise EnvironmentError('The DATABASE_URL environment variable is not set.')
+
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
+
 @app.route('/webhook', methods=['POST'])
 def respond():
     try:
         data = request.json
         app.logger.info(f"Received data: {data}")
 
-        # Debugging: Print the received data
-        print("Received data:", data)
-
         conn = get_conn()
         cur = conn.cursor()
-
-        # More debugging: Print out the connection success
-        print("Database connection successful")
 
         date = datetime.datetime.strptime(data['date'], '%m/%d/%Y').date()
 
@@ -21,19 +31,14 @@ def respond():
         """, (data['product'], data['units_sold'], data['revenue'], data['cost'], data['profit'], date))
 
         conn.commit()
-
-        # Debugging: Print out the commit success
-        print("Database insert successful")
-
         cur.close()
         conn.close()
-
         app.logger.info("Data inserted into database successfully")
-
         return {'message': 'Data received and stored.'}, 201
 
     except Exception as e:
-        # Debugging: Print out any error
-        print("Error:", e)
         app.logger.error(f"Error processing request: {e}")
-        raise
+        return {'error': str(e)}, 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000))
