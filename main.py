@@ -1,26 +1,19 @@
-from flask import Flask, request
-import datetime
-import os
-import psycopg2
-
-app = Flask(__name__)
-
-def get_conn():
-    db_url = os.getenv('postgresql://postgres:ecA5266cG2CB62D6G43abFED6641aGb3@viaduct.proxy.rlwy.net:55714/railway')
-    if not db_url:
-        raise ValueError("No DATABASE_URL set for the database connection")
-    return psycopg2.connect(db_url)
-
 @app.route('/webhook', methods=['POST'])
 def respond():
     try:
         data = request.json
         app.logger.info(f"Received data: {data}")
 
+        # Debugging: Print the received data
+        print("Received data:", data)
+
         conn = get_conn()
         cur = conn.cursor()
 
-        date = datetime.datetime.strptime(data['date'], '%m/%d/%Y').date()  # date string should be converted to date object
+        # More debugging: Print out the connection success
+        print("Database connection successful")
+
+        date = datetime.datetime.strptime(data['date'], '%m/%d/%Y').date()
 
         cur.execute("""
             INSERT INTO salesdata (product, units_sold, revenue, cost, profit, date)
@@ -28,6 +21,10 @@ def respond():
         """, (data['product'], data['units_sold'], data['revenue'], data['cost'], data['profit'], date))
 
         conn.commit()
+
+        # Debugging: Print out the commit success
+        print("Database insert successful")
+
         cur.close()
         conn.close()
 
@@ -36,8 +33,7 @@ def respond():
         return {'message': 'Data received and stored.'}, 201
 
     except Exception as e:
+        # Debugging: Print out any error
+        print("Error:", e)
         app.logger.error(f"Error processing request: {e}")
         raise
-
-if __name__ == '__main__':
-    app.run(debug=True)  # Set debug to False in production
