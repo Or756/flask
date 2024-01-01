@@ -1,3 +1,16 @@
+from flask import Flask, request
+import datetime
+import os
+import psycopg2
+
+app = Flask(__name__)
+
+def get_conn():
+    db_url = os.getenv('postgresql://postgres:ecA5266cG2CB62D6G43abFED6641aGb3@viaduct.proxy.rlwy.net:55714/railway')
+    if not db_url:
+        raise ValueError("No DATABASE_URL set for the database connection")
+    return psycopg2.connect(db_url)
+
 @app.route('/webhook', methods=['POST'])
 def respond():
     try:
@@ -21,6 +34,10 @@ def respond():
         app.logger.info("Data inserted into database successfully")
 
         return {'message': 'Data received and stored.'}, 201
+
     except Exception as e:
         app.logger.error(f"Error processing request: {e}")
         raise
+
+if __name__ == '__main__':
+    app.run(debug=True)  # Set debug to False in production
